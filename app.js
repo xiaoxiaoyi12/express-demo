@@ -1,6 +1,7 @@
 import express from 'express';
 import db from './db.js';
 const app = express();
+app.use(express.static('public')); //启用静态文件托管
 const users = [
   { id: 1, name: 'Alice', email: 'alice@example.com' },
   { id: 2, name: 'Bob', email: 'bob@example.com' },
@@ -122,7 +123,7 @@ app.put('/api/users/update/:id', async (req, res) => {
 });
 
 // --- DELETE /api/users/:id —— 删除用户 ---
-app.delete('/api/users/:id', async (req, res) => {
+app.delete('/api/users/delete/:id', async (req, res) => {
   try {
     const [result] = await db.query('DELETE FROM users WHERE id = ?', [
       req.params.id,

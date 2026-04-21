@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>用户管理后台 · MySQL版</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      input {
+        padding: 8px;
+        margin-right: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      button {
+        padding: 8px 16px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 2rem;
+      }
+      th,
+      td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+      .actions button {
+        margin-right: 5px;
+        padding: 4px 8px;
+        font-size: 12px;
+      }
+      .delete-btn {
+        background: #dc3545;
+      }
+      .delete-btn:hover {
+        background: #c82333;
+      }
+      .pagination {
+        margin-top: 1rem;
+        display: flex;
+        gap: 5px;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>📋 用户管理 (MySQL + Express)</h1>
+
+    <!-- 添加用户表单 -->
+    <div class="form-group">
+      <h3>➕ 添加新用户</h3>
+      <input type="text" id="newName" placeholder="姓名" required />
+      <input type="email" id="newEmail" placeholder="邮箱" required />
+      <button onclick="createUser()">创建</button>
+    </div>
+
+    <!-- 搜索框 -->
+    <div class="form-group">
+      <h3>🔍 搜索用户</h3>
+      <input type="text" id="searchInput" placeholder="输入姓名或邮箱" />
+      <button onclick="fetchUsers()">搜索</button>
+      <button
+        onclick="
+          document.getElementById('searchInput').value = '';
+          fetchUsers();
+        "
+      >
+        重置
+      </button>
+    </div>
+
+    <!-- 用户列表表格 -->
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>姓名</th>
+          <th>邮箱</th>
+          <th>创建时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="userTableBody"></tbody>
+    </table>
+
+    <!-- 分页控件 -->
+    <div class="pagination" id="pagination"></div>
+
+    <script>
+      const API_BASE = '/api/users';
+      let currentPage = 1;
+      const limit = 5;
+
+      // 页面加载时获取用户列表
+      window.onload = () => fetchUsers();
+
+      async function fetchUsers() {
+        const search = document.getElementById('searchInput').value;
+        const url = `${API_BASE}/list?page=${currentPage}&limit=${limit}&search=${encodeURIComponent(search)}`;
+
+        try {
+          const res = await fetch(url);
+          const result = await res.json();
+          renderTable(result.data);
+          renderPagination(result.pagination);
+        } catch (err) {
+          alert('获取用户列表失败');
+        }
+      }
+
+      function renderTable(users) {
+        const tbody = document.getElementById('userTableBody');
+        if (users.length === 0) {
+          tbody.innerHTML =
+            '<tr><td colspan="5" style="text-align:center;">暂无数据</td></tr>';
+          return;
+        }
+        tbody.innerHTML = users
+          .map(
+            (user) => `
+        <tr>
+          <td>${user.id}</td>
+          <td>${escapeHtml(user.name)}</td>
+          <td>${escapeHtml(user.email)}</td>
+          <td>${new Date(user.created_at).toLocaleString()}</td>
+          <td class="actions">
+            <button onclick='editUser(${user.id}, "${escapeHtml(user.name)}", "${escapeHtml(user.email)}")'>✏️ 编辑</button>
+            <button class="delete-btn" onclick='deleteUser(${user.id})'>🗑️ 删除</button>
+          </td>
+        </tr>
+      `,
+          )
+          .join('');
+      }
+
+      function renderPagination(pagination) {
+        const div = document.getElementById('pagination');
+        const { page, totalPages } = pagination;
+        let html = `<button ${page === 1 ? 'disabled' : ''} onclick="goToPage(${page - 1})">上一页</button>`;
+        html += `<span> 第 ${page} / ${totalPages} 页 </span>`;
+        html += `<button ${page === totalPages ? 'disabled' : ''} onclick="goToPage(${page + 1})">下一页</button>`;
+        div.innerHTML = html;
+      }
+
+      function goToPage(page) {
+        currentPage = page;
+        fetchUsers();
+      }
+
+      async function createUser() {
+        const name = document.getElementById('newName').value.trim();
+        const email = document.getElementById('newEmail').value.trim();
+        if (!name || !email) return alert('姓名和邮箱不能为空');
+
+        try {
+          const res = await fetch(`${API_BASE}/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email }),
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error);
+          }
+          document.getElementById('newName').value = '';
+          document.getElementById('newEmail').value = '';
+          currentPage = 1; // 回到第一页
+          fetchUsers();
+        } catch (err) {
+          alert('创建失败：' + err.message);
+        }
+      }
+
+      async function deleteUser(id) {
+        if (!confirm('确定要删除该用户吗？')) return;
+        try {
+          await fetch(`${API_BASE}/delete/${id}`, { method: 'DELETE' });
+          fetchUsers();
+        } catch (err) {
+          alert('删除失败');
+        }
+      }
+
+      // 简易编辑（用 prompt 演示，你也可以改成内联编辑）
+      function editUser(id, oldName, oldEmail) {
+        const newName = prompt('修改姓名', oldName);
+        if (newName === null) return;
+        const newEmail = prompt('修改邮箱', oldEmail);
+        if (newEmail === null) return;
+
+        fetch(`${API_BASE}/update/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newName, email: newEmail }),
+        })
+          .then((res) => {
+            if (!res.ok)
+              return res.json().then((err) => {
+                throw new Error(err.error);
+              });
+            fetchUsers();
+          })
+          .catch((err) => alert('更新失败：' + err.message));
+      }
+
+      // 防止 XSS
+      function escapeHtml(text) {
+        return String(text).replace(/[&<>"]/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+        });
+      }
+    </script>
+  </body>
+</html>
