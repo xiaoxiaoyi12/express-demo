@@ -1,6 +1,7 @@
 import express from 'express';
 import db from './db.js';
 const app = express();
+const PORT = process.env.PORT || 3000;
 app.use(express.static('public')); //启用静态文件托管
 const users = [
   { id: 1, name: 'Alice', email: 'alice@example.com' },
@@ -137,6 +138,6 @@ app.delete('/api/users/delete/:id', async (req, res) => {
   }
 });
 
-app.listen(9999, () => {
-  console.log('Server is running on 9999 port');
+app.listen(PORT, () => {
+  console.log(`Server is running on ${PORT} port`);
 });
