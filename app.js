@@ -1,5 +1,5 @@
 import express from 'express';
-import db from './db.js';
+import sequelize from './config/database.js';
 import userRoutes from './routes/userRoutes.js';
 
 const app = express();
@@ -15,7 +15,16 @@ app.use('/api', (req, res, next) => {
 
 // 挂载用户路由
 app.use('/api/users', userRoutes);
-// 启动服务
-app.listen(PORT, () => {
-  console.log(`Server is running on ${PORT} port`);
-});
+
+// 同步数据库模型后启动服务
+sequelize
+  .sync({ alter: false }) // alter: true 会根据模型自动修改表结构（谨慎使用）
+  .then(() => {
+    console.log('✅ 数据库模型同步完成');
+    app.listen(PORT, () => {
+      console.log(`🚀 服务运行在 http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('❌ 数据库同步失败:', err);
+  });
