@@ -11,7 +11,7 @@ const auth = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (err) {
-    return res.status(403).json({ error: 'Token 无效或已过期' });
+    return res.status(401).json({ error: 'Token 无效或已过期' });
   }
 };
 
