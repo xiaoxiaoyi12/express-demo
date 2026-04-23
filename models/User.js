@@ -21,6 +21,10 @@ const User = sequelize.define(
         isEmail: true,
       },
     },
+    password_hash: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
   },
   {
     tableName: 'users', // 指定表名（与现有表一致）

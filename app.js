@@ -1,7 +1,7 @@
 import express from 'express';
 import sequelize from './config/database.js';
 import userRoutes from './routes/userRoutes.js';
-
+import authRoutes from './routes/authRoutes.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -14,6 +14,7 @@ app.use('/api', (req, res, next) => {
 });
 
 // 挂载用户路由
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 
 // 同步数据库模型后启动服务
