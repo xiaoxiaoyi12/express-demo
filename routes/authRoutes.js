@@ -6,7 +6,7 @@ import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
 import RefreshToken from '../models/RefreshToken.js';
 import { registerValidator, loginValidator } from '../middleware/validators.js';
 import { handleValidationErrors } from '../middleware/validationResult.js';
-
+import logger from '../config/logger.js';
 const router = express.Router();
 
 // 注册
@@ -47,10 +47,12 @@ router.post(
       const { email, password } = req.body;
       const user = await User.findOne({ where: { email } });
       if (!user) {
+        logger.warn(`登录失败：邮箱 ${email} 不存在`);
         return res.status(401).json({ error: '邮箱或密码错误' });
       }
       const valid = await bcrypt.compare(password, user.password_hash);
       if (!valid) {
+        logger.warn(`登录失败：邮箱 ${email} 密码错误`);
         return res.status(401).json({ error: '邮箱或密码错误' });
       }
       // 1. 生成 Access Token
