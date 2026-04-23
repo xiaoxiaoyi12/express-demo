@@ -41,15 +41,14 @@ app.use((err, req, res, next) => {
     .json({ error: err.message || '服务器内部错误' });
 });
 
-// 同步数据库模型后启动服务
-sequelize
-  .sync({ alter: false }) // alter: true 会根据模型自动修改表结构（谨慎使用）
-  .then(() => {
-    console.log('✅ 数据库模型同步完成');
+// 将 app.listen 部分抽离，只在直接运行时启动
+if (import.meta.url === `file://${process.argv[1]}`) {
+  sequelize.sync({ alter: false }).then(() => {
+    logger.info('✅ 数据库模型同步完成');
     app.listen(PORT, () => {
-      console.log(`🚀 服务运行在 http://localhost:${PORT}`);
+      logger.info(`🚀 服务运行在 http://localhost:${PORT}`);
     });
-  })
-  .catch((err) => {
-    console.error('❌ 数据库同步失败:', err);
   });
+}
+
+export default app;
