@@ -350,7 +350,12 @@
             body: JSON.stringify({ email, password }),
           });
           const data = await res.json();
-          if (!res.ok) throw new Error(data.error || '登录失败');
+          if (!res.ok) {
+            const msg = data.details
+              ? data.details.map((d) => d.message).join('；')
+              : data.error || '登录失败';
+            throw new Error(msg);
+          }
 
           setTokens(data.accessToken, data.refreshToken);
           currentUserInfo = data.user;
@@ -383,7 +388,12 @@
             body: JSON.stringify({ name, email, password }),
           });
           const data = await res.json();
-          if (!res.ok) throw new Error(data.error || '注册失败');
+          if (!res.ok) {
+            const msg = data.details
+              ? data.details.map((d) => d.message).join('；')
+              : data.error || '注册失败';
+            throw new Error(msg);
+          }
 
           alert('注册成功！请登录');
           // 切换到登录页，并预填邮箱
