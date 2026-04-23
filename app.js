@@ -4,6 +4,9 @@ import userRoutes from './routes/userRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import morgan from 'morgan';
 import logger, { morganStream } from './config/logger.js';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './config/swagger.js';
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -20,6 +23,9 @@ app.use('/api', (req, res, next) => {
   res.setHeader('Cache-Control', 'no-store,no-cache,must-revalidate,private');
   next();
 });
+
+// API 文档路由（无需认证）
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // 挂载用户路由
 app.use('/api/auth', authRoutes);
